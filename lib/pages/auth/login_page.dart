@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
-import '../dashboard_page.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -99,12 +99,8 @@ class _LoginPageState extends State<LoginPage> {
                                   );
 
                                   if (success) {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => DashboardPage(),
-                                      ),
-                                    );
+                                    Navigator.pushReplacementNamed(context, '/dashboard');
+
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
