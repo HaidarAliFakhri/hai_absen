@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:hai_absen/pages/dashboard_page.dart';
 
@@ -22,38 +21,37 @@ class _SplashPageState extends State<SplashPage>
   void initState() {
     super.initState();
 
-    // --- Simple logo animation ---
+    // Animasi logo
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
 
-    _scaleAnim = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    _scaleAnim = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
 
     _controller.forward();
 
-    // --- Start redirect ---
-    _redirect();
+    // Redirect dijalankan setelah build selesai
+    Future.microtask(() => _redirect());
   }
 
   Future<void> _redirect() async {
-    await Future.delayed(const Duration(seconds: 2)); // Splash delay
+    // Splash delay
+    await Future.delayed(const Duration(seconds: 2));
 
     final token = await LocalStorage.getToken();
 
     if (!mounted) return;
 
+    // Arahkan halaman
     if (token != null && token.isNotEmpty) {
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DashboardPage()),
       );
     } else {
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => LoginPage()),
       );
     }
@@ -75,7 +73,7 @@ class _SplashPageState extends State<SplashPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // --- Circle logo ---
+              // Logo
               Container(
                 height: 120,
                 width: 120,
@@ -96,7 +94,9 @@ class _SplashPageState extends State<SplashPage>
                   color: Colors.blue.shade700,
                 ),
               ),
+
               const SizedBox(height: 25),
+
               Text(
                 "HaiAbsen",
                 style: TextStyle(
@@ -106,10 +106,15 @@ class _SplashPageState extends State<SplashPage>
                   letterSpacing: 1.2,
                 ),
               ),
+
               const SizedBox(height: 8),
+
               Text(
                 "Absensi Modern & Otomatis",
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),

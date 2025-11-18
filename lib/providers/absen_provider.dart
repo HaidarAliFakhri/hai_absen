@@ -224,33 +224,62 @@ class AbsenProvider with ChangeNotifier {
 
   // ---------- Izin ----------
   Future<Map<String, dynamic>> requestIzin(String alasan) async {
-    actionLoading = true;
-    notifyListeners();
-    try {
-      final now = DateTime.now();
-      final body = {
-        "attendance_date": DateFormat('yyyy-MM-dd').format(now),
-        "alasan_izin": alasan,
-      };
+  actionLoading = true;
+  notifyListeners();
 
-      final res = await ApiService.post('/izin', body);
-      final parsed = jsonDecode(res.body);
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        await fetchHistory();
-        actionLoading = false;
-        notifyListeners();
-        return {"ok": true, "body": parsed};
-      } else {
-        actionLoading = false;
-        notifyListeners();
-        return {"ok": false, "body": parsed, "statusCode": res.statusCode};
-      }
-    } catch (e) {
+  try {
+    final now = DateTime.now();
+    final body = {
+      "date": DateFormat('yyyy-MM-dd').format(now),
+      "alasan_izin": alasan,
+    };
+
+    final res = await ApiService.post('/izin', body);
+    final parsed = jsonDecode(res.body);
+
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      await fetchHistory();
       actionLoading = false;
       notifyListeners();
-      return {"ok": false, "error": e.toString()};
+      return {"ok": true, "body": parsed};
     }
+
+    actionLoading = false;
+    notifyListeners();
+    return {"ok": false, "body": parsed};
+  } catch (e) {
+    actionLoading = false;
+    notifyListeners();
+    return {"ok": false, "error": e.toString()};
   }
+}
+Future<Map<String, dynamic>> deleteAbsen(int id) async {
+  actionLoading = true;
+  notifyListeners();
+
+  try {
+    final res = await ApiService.delete("/delete-absen?id=$id");
+
+    final parsed = jsonDecode(res.body);
+
+    if (res.statusCode == 200) {
+      await fetchHistory(); // refresh list
+      actionLoading = false;
+      notifyListeners();
+      return {"ok": true, "body": parsed};
+    }
+
+    actionLoading = false;
+    notifyListeners();
+    return {"ok": false, "body": parsed};
+  } catch (e) {
+    actionLoading = false;
+    notifyListeners();
+    return {"ok": false, "error": e.toString()};
+  }
+}
+
+
 
   // ---------- Update profile (data non-file) ----------
   Future<bool> updateProfile(Map<String, dynamic> body) async {

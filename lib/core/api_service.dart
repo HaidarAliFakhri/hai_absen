@@ -27,6 +27,11 @@ class ApiService {
     final headers = await _headers();
     return await http.get(url, headers: headers);
   }
+  static Future<http.Response> delete(String path) async {
+  final url = Uri.parse("${Constants.baseUrl}$path");
+  final headers = await _headers();
+  return await http.delete(url, headers: headers);
+}
 
   // ------------------ ADD THIS ------------------
   static Future<http.Response> uploadFile(

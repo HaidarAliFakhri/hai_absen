@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:hai_absen/pages/detail_page.dart';
 import 'package:hai_absen/pages/profile_page.dart';
 import 'package:hai_absen/providers/thame_provider.dart';
-import 'package:hai_absen/widgets/qr_scanner_page.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +25,6 @@ class _DashboardPageState extends State<DashboardPage> {
   Timer? _autoRefreshTimer;
 
   String _timeStr = DateFormat('HH:mm:ss').format(DateTime.now());
-
   final bool _darkMode = false;
 
   final MobileScannerController _qrController = MobileScannerController(
@@ -34,27 +32,40 @@ class _DashboardPageState extends State<DashboardPage> {
     torchEnabled: false,
   );
 
+  // Greeting
+  String greeting() {
+    final hour = DateTime.now().hour;
+
+    if (hour >= 4 && hour < 11) return "Selamat Pagi";
+    if (hour >= 11 && hour < 15) return "Selamat Siang";
+    if (hour >= 15 && hour < 18) return "Selamat Sore";
+    return "Selamat Malam";
+  }
+
   @override
   void initState() {
     super.initState();
-    final prov = Provider.of<AbsenProvider>(context, listen: false);
 
-    prov.fetchProfile();
-    prov.fetchHistory();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final prov = Provider.of<AbsenProvider>(context, listen: false);
 
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        setState(() {
-          _timeStr = DateFormat('HH:mm:ss').format(DateTime.now());
-        });
-      }
-    });
+      prov.fetchProfile();
+      prov.fetchHistory();
 
-    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
-      if (mounted) {
-        prov.fetchProfile();
-        prov.fetchHistory();
-      }
+      _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) {
+          setState(() {
+            _timeStr = DateFormat('HH:mm:ss').format(DateTime.now());
+          });
+        }
+      });
+
+      _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+        if (mounted) {
+          prov.fetchProfile();
+          prov.fetchHistory();
+        }
+      });
     });
   }
 
@@ -73,14 +84,11 @@ class _DashboardPageState extends State<DashboardPage> {
     return now.isAfter(start) && now.isBefore(end);
   }
 
-  // Permission dialog
   Future<bool> _ensureCameraPermission() async {
     final status = await _qrController.start();
-
     return status != null;
   }
 
-  // Toast
   void _toast(String text) {
     if (Platform.isIOS) {
       showCupertinoModalPopup(
@@ -103,11 +111,12 @@ class _DashboardPageState extends State<DashboardPage> {
         if (Navigator.canPop(context)) Navigator.pop(context);
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(text)),
+      );
     }
   }
 
-  // QR Scanner Fullscreen
   Future<void> _openQr(AbsenProvider prov) async {
     if (!await _ensureCameraPermission()) {
       _toast("Izin kamera ditolak");
@@ -119,39 +128,14 @@ class _DashboardPageState extends State<DashboardPage> {
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => Scaffold(
-          appBar: AppBar(
-            title: const Text("Scan QR Absensi"),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.qr_code_scanner),
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const QRScannerPage()),
-                  );
-
-                  if (result != null) {
-                    final res = await prov.checkIn(status: 'masuk');
-                    _toast(res['body']?['message'] ?? "Absen via QR");
-                  }
-                },
-              ),
-            ],
-          ),
+          appBar: AppBar(title: const Text("Scan QR Absensi")),
           body: MobileScanner(
             controller: _qrController,
             onDetect: (capture) async {
-              final List<Barcode> barcodes = capture.barcodes;
-              if (barcodes.isNotEmpty) {
+              if (capture.barcodes.isNotEmpty) {
                 Navigator.pop(context);
-                _toast("QR Terdeteksi, Mengirim absen...");
-
                 final res = await prov.checkIn(status: 'masuk');
-                if (res['ok'] == true) {
-                  _toast("Absen via QR berhasil");
-                } else {
-                  _toast("Gagal absen via QR");
-                }
+                _toast(res['body']?['message'] ?? "Absen via QR");
               }
             },
           ),
@@ -160,7 +144,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // SHIMMER
   Widget _shimmerCard() {
     return Shimmer.fromColors(
       baseColor: Colors.grey.shade300,
@@ -176,7 +159,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // PROFILE CARD
   Widget _profileCard(AbsenProvider prov) {
     final p = prov.profile;
     if (p == null) return _shimmerCard();
@@ -187,17 +169,14 @@ class _DashboardPageState extends State<DashboardPage> {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            Hero(
-              tag: "profile-photo",
-              child: CircleAvatar(
-                radius: 35,
-                backgroundImage: p['profile_photo_url'] != null
-                    ? NetworkImage(p['profile_photo_url'])
-                    : null,
-                child: p['profile_photo_url'] == null
-                    ? const Icon(Icons.person, size: 36)
-                    : null,
-              ),
+            CircleAvatar(
+              radius: 35,
+              backgroundImage: p['profile_photo_url'] != null
+                  ? NetworkImage(p['profile_photo_url'])
+                  : null,
+              child: p['profile_photo_url'] == null
+                  ? const Icon(Icons.person, size: 36)
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -231,7 +210,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // STATUS CARD
   Widget _statusCard(AbsenProvider prov) {
     final h = prov.todayAttendance;
 
@@ -240,7 +218,11 @@ class _DashboardPageState extends State<DashboardPage> {
     IconData icon = Icons.info;
 
     if (h != null) {
-      if (h.status == 'masuk') {
+      if (h.status == 'izin') {
+        txt = "Izin Hari Ini\n${h.alasanIzin}";
+        color = Colors.orange.shade100;
+        icon = Icons.event_busy;
+      } else if (h.status == 'masuk') {
         if (h.checkOutTime == null) {
           txt = "Sudah Absen Masuk";
           color = Colors.green.shade100;
@@ -250,10 +232,6 @@ class _DashboardPageState extends State<DashboardPage> {
           color = Colors.blue.shade100;
           icon = Icons.logout;
         }
-      } else if (h.status == 'izin') {
-        txt = "Izin: ${h.alasanIzin}";
-        color = Colors.orange.shade100;
-        icon = Icons.event_busy;
       }
     }
 
@@ -281,59 +259,109 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // ACTION BUTTONS
   Widget _buttons(AbsenProvider prov) {
     final h = prov.todayAttendance;
 
     final checkedIn = h?.checkInTime != null;
     final checkedOut = h?.checkOutTime != null;
 
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: checkedIn
-                ? null
-                : () async {
-                    if (!isWithinWorkingHours()) {
-                      _toast("Diluar Jam Kerja");
-                      return;
-                    }
-
-                    final res = await prov.checkIn(status: 'masuk');
-                    _toast(res['body']?['message'] ?? "Absen masuk");
-                  },
-            icon: const Icon(Icons.login),
-            label: const Text("Masuk"),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: checkedIn
+                    ? null
+                    : () async {
+                        if (!isWithinWorkingHours()) {
+                          _toast("Diluar Jam Kerja");
+                          return;
+                        }
+                        final res = await prov.checkIn(status: 'masuk');
+                        _toast(res['body']?['message'] ?? "Absen masuk");
+                      },
+                icon: const Icon(Icons.login),
+                label: const Text("Masuk"),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: !checkedIn || checkedOut
+                    ? null
+                    : () async {
+                        if (!isWithinWorkingHours()) {
+                          _toast("Belum saatnya pulang");
+                          return;
+                        }
+                        final res = await prov.checkOut();
+                        _toast(res['body']?['message'] ?? "Absen pulang");
+                      },
+                icon: const Icon(Icons.logout),
+                label: const Text("Pulang"),
+              ),
+            ),
+            IconButton(
+              onPressed: () => _openQr(prov),
+              icon: const Icon(Icons.qr_code_scanner),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: !checkedIn || checkedOut
-                ? null
-                : () async {
-                    if (!isWithinWorkingHours()) {
-                      _toast("Belum saatnya pulang");
-                      return;
-                    }
 
-                    final res = await prov.checkOut();
-                    _toast(res['body']?['message'] ?? "Absen pulang");
-                  },
-            icon: const Icon(Icons.logout),
-            label: const Text("Pulang"),
+        const SizedBox(height: 10),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final alasan = await _dialogIzin();
+              if (alasan != null && alasan.trim().isNotEmpty) {
+                final res = await prov.requestIzin(alasan);
+                _toast(res['body']?['message'] ?? "Izin berhasil dikirim");
+              }
+            },
+            icon: const Icon(Icons.event_busy),
+            label: const Text("Ajukan Izin"),
           ),
-        ),
-        IconButton(
-          onPressed: () => _openQr(prov),
-          icon: const Icon(Icons.qr_code_scanner),
         ),
       ],
     );
   }
 
-  // TIMELINE RIWAYAT
+  Future<String?> _dialogIzin() async {
+    final controller = TextEditingController();
+
+    return await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text("Ajukan Izin"),
+          content: TextField(
+            controller: controller,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: "Masukkan alasan izin...",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx, controller.text);
+              },
+              child: const Text("Kirim"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _timeline(AbsenProvider prov) {
     if (prov.loading) {
       return Column(children: List.generate(4, (_) => _shimmerCard()));
@@ -410,7 +438,6 @@ class _DashboardPageState extends State<DashboardPage> {
           actions: [
             IconButton(
               icon: const Icon(Icons.settings),
-              tooltip: "Pengaturan Profil",
               onPressed: () {
                 Navigator.push(
                   context,
@@ -418,12 +445,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               },
             ),
-
             IconButton(
-              icon: Icon(themeProv.isDark ? Icons.light_mode : Icons.dark_mode),
-              onPressed: () {
-                themeProv.toggleTheme(); // ← ini sekarang bekerja normal
-              },
+              icon: Icon(
+                  themeProv.isDark ? Icons.light_mode : Icons.dark_mode),
+              onPressed: () => themeProv.toggleTheme(),
             ),
           ],
         ),
@@ -436,19 +461,36 @@ class _DashboardPageState extends State<DashboardPage> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (prov.profile != null) ...[
+                  Text(
+                    "${greeting()}, ${prov.profile!['name']} 👋",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Hari ini: ${DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(DateTime.now())}",
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
                 _profileCard(prov),
                 const SizedBox(height: 16),
                 _statusCard(prov),
                 const SizedBox(height: 16),
                 _buttons(prov),
                 const SizedBox(height: 20),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Riwayat Absensi",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                const Text(
+                  "Riwayat Absensi",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 10),
                 _timeline(prov),

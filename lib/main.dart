@@ -4,13 +4,17 @@ import 'package:hai_absen/pages/dashboard_page.dart';
 import 'package:hai_absen/pages/splash_page.dart';
 import 'package:hai_absen/providers/thame_provider.dart';
 import 'package:provider/provider.dart';
-
+import 'package:intl/date_symbol_data_local.dart';
 import 'pages/auth/login_page.dart';
 import 'providers/absen_provider.dart';
 import 'providers/auth_provider.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
+  await initializeDateFormatting();
+ 
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
