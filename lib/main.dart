@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hai_absen/pages/auth/register_page.dart';
 import 'package:hai_absen/pages/dashboard_page.dart';
 import 'package:hai_absen/pages/splash_page.dart';
+import 'package:hai_absen/providers/thame_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/auth/login_page.dart';
@@ -20,18 +21,35 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => AbsenProvider()), // WAJIB
+        ChangeNotifierProvider(create: (_) => AbsenProvider()),
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+        ), // THEME PROVIDER
       ],
-      child: MaterialApp(
-        themeMode: ThemeMode.system, // otomatis mengikuti device
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
-        debugShowCheckedModeBanner: false,
-        home: SplashPage(),
-        routes: {
-          '/dashboard': (_) => DashboardPage(),
-          '/register': (context) => RegisterPage(),
-          '/login': (context) => LoginPage(),
+
+      // >>>>>>> FIX: Bungkus MaterialApp dengan Consumer <<<<<<<<
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProv, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+
+            // TERAPKAN MODE GELAP / TERANG
+            themeMode: themeProv.isDark ? ThemeMode.dark : ThemeMode.light,
+
+            theme: ThemeData(brightness: Brightness.light, useMaterial3: true),
+
+            darkTheme: ThemeData(
+              brightness: Brightness.dark,
+              useMaterial3: true,
+            ),
+
+            home: const SplashPage(),
+            routes: {
+              '/dashboard': (_) => DashboardPage(),
+              '/register': (_) => RegisterPage(),
+              '/login': (_) => LoginPage(),
+            },
+          );
         },
       ),
     );

@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hai_absen/pages/detail_page.dart';
 import 'package:hai_absen/pages/profile_page.dart';
+import 'package:hai_absen/providers/thame_provider.dart';
 import 'package:hai_absen/widgets/qr_scanner_page.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -26,7 +27,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   String _timeStr = DateFormat('HH:mm:ss').format(DateTime.now());
 
-  bool _darkMode = false;
+  final bool _darkMode = false;
 
   final MobileScannerController _qrController = MobileScannerController(
     facing: CameraFacing.back,
@@ -399,6 +400,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final prov = Provider.of<AbsenProvider>(context);
+    final themeProv = Provider.of<ThemeProvider>(context);
 
     return Theme(
       data: _darkMode ? ThemeData.dark() : ThemeData.light(),
@@ -418,9 +420,9 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
 
             IconButton(
-              icon: Icon(_darkMode ? Icons.dark_mode : Icons.light_mode),
+              icon: Icon(themeProv.isDark ? Icons.light_mode : Icons.dark_mode),
               onPressed: () {
-                setState(() => _darkMode = !_darkMode);
+                themeProv.toggleTheme(); // ← ini sekarang bekerja normal
               },
             ),
           ],
