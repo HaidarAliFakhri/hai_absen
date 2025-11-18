@@ -1,14 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/absen_provider.dart';
 import '../core/shared_prefs.dart';
+import '../providers/absen_provider.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -16,7 +17,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final _name = TextEditingController();
-  final _phone = TextEditingController();
+  String? _gender;
   bool _editing = false;
 
   @override
@@ -24,9 +25,10 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     final prov = Provider.of<AbsenProvider>(context, listen: false);
     final p = prov.profile;
+
     if (p != null) {
       _name.text = p["name"] ?? "";
-      _phone.text = p["phone"] ?? "";
+      _gender = p["jenis_kelamin"];
     }
   }
 
@@ -40,10 +42,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (img == null) return;
 
-    final success = await prov.uploadPhoto(File(img.path));
+    final bytes = await File(img.path).readAsBytes();
+    final base64Img = "data:image/png;base64,${base64Encode(bytes)}";
 
-    if (success) _toast("Foto berhasil diperbarui");
-    else _toast("Gagal upload foto");
+    final success = await prov.updatePhoto(base64Img);
+
+    if (success) {
+      _toast("Foto berhasil diperbarui");
+    } else {
+      _toast("Gagal upload foto");
+    }
   }
 
   @override
@@ -52,10 +60,10 @@ class _ProfilePageState extends State<ProfilePage> {
     final p = prov.profile;
 
     if (p == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+    final String? photoUrl = p["profile_photo_url"];
+    // Perbaikan: generate URL foto benar
 
     return Scaffold(
       appBar: AppBar(
@@ -63,19 +71,22 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              LocalStorage.saveToken("");
-              Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
+            onPressed: () async {
+              await LocalStorage.clear();
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (Route<dynamic> route) => false,
+              );
             },
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            
-            // FOTO PROFIL (HERO)
+            // FOTO PROFIL
             Center(
               child: GestureDetector(
                 onTap: () => _pickPhoto(prov),
@@ -83,10 +94,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   tag: "profile-photo",
                   child: CircleAvatar(
                     radius: 55,
-                    backgroundImage: p["profile_photo_url"] != null
-                        ? NetworkImage(p["profile_photo_url"])
+                    backgroundImage: photoUrl != null
+                        ? NetworkImage(photoUrl)
                         : null,
-                    child: p["profile_photo_url"] == null
+                    child: photoUrl == null
                         ? const Icon(Icons.person, size: 50)
                         : null,
                   ),
@@ -100,32 +111,37 @@ class _ProfilePageState extends State<ProfilePage> {
               p["name"] ?? "-",
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            Text("Batch ${p["batch_ke"] ?? '-'} • ${p["training_title"] ?? '-'}"),
+            Text(
+              "Batch ${p["batch_ke"] ?? '-'} • ${p["training_title"] ?? '-'}",
+            ),
 
             const SizedBox(height: 30),
 
-            // FORM EDIT
+            // ===== FORM EDIT =====
             TextField(
               controller: _name,
               enabled: _editing,
-              decoration: const InputDecoration(
-                labelText: "Nama Lengkap",
-              ),
+              decoration: const InputDecoration(labelText: "Nama Lengkap"),
             ),
 
             const SizedBox(height: 15),
 
-            TextField(
-              controller: _phone,
-              enabled: _editing,
+            DropdownButtonFormField<String>(
+              initialValue: _gender,
+              items: const [
+                DropdownMenuItem(value: "L", child: Text("Laki-laki")),
+                DropdownMenuItem(value: "P", child: Text("Perempuan")),
+              ],
+              onChanged: _editing ? (v) => setState(() => _gender = v) : null,
               decoration: const InputDecoration(
-                labelText: "Nomor HP",
+                labelText: "Jenis Kelamin",
+                border: OutlineInputBorder(),
               ),
             ),
 
             const SizedBox(height: 25),
 
-            // BUTTON UBAH DATA
+            // ===== BUTTON ACTION =====
             _editing
                 ? ElevatedButton.icon(
                     icon: const Icon(Icons.save),
@@ -133,7 +149,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: () async {
                       final body = {
                         "name": _name.text.trim(),
-                        "phone": _phone.text.trim(),
+                        "jenis_kelamin": _gender,
                       };
 
                       final ok = await prov.updateProfile(body);
@@ -153,7 +169,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 40),
 
-            // INFO LAIN
+            // ===== INFO STATIC =====
             Card(
               child: ListTile(
                 leading: const Icon(Icons.info),
@@ -169,7 +185,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 subtitle: Text(p["id"].toString()),
               ),
             ),
-
           ],
         ),
       ),

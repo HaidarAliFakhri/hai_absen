@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -93,14 +92,16 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: auth.loading
                               ? null
                               : () async {
-                                  bool success = await auth.login(
+                                  final success = await auth.login(
                                     email.text.trim(),
                                     pass.text.trim(),
                                   );
 
                                   if (success) {
-                                    Navigator.pushReplacementNamed(context, '/dashboard');
-
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      '/dashboard',
+                                    );
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(

@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+
 import '../core/api_service.dart';
 import '../models/attendance_model.dart';
 
@@ -34,7 +35,9 @@ class AbsenProvider with ChangeNotifier {
       throw Exception('Location permission denied forever');
     }
 
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
   }
 
   // ---------- Helper: reverse geocode to address ----------
@@ -46,8 +49,11 @@ class AbsenProvider with ChangeNotifier {
         final parts = [
           if (p.street != null && p.street!.isNotEmpty) p.street,
           if (p.locality != null && p.locality!.isNotEmpty) p.locality,
-          if (p.subAdministrativeArea != null && p.subAdministrativeArea!.isNotEmpty) p.subAdministrativeArea,
-          if (p.administrativeArea != null && p.administrativeArea!.isNotEmpty) p.administrativeArea,
+          if (p.subAdministrativeArea != null &&
+              p.subAdministrativeArea!.isNotEmpty)
+            p.subAdministrativeArea,
+          if (p.administrativeArea != null && p.administrativeArea!.isNotEmpty)
+            p.administrativeArea,
           if (p.country != null && p.country!.isNotEmpty) p.country,
         ];
         return parts.join(', ');
@@ -62,16 +68,35 @@ class AbsenProvider with ChangeNotifier {
   Future<void> fetchProfile() async {
     loading = true;
     notifyListeners();
+
     try {
       final res = await ApiService.get('/profile');
+
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
-        profile = body['data'] ?? body;
-      } else if (res.statusCode == 401) {
+
+        // Ambil data asli
+        final data = body['data'] ?? body;
+
+        // Perbaiki URL foto
+        String? rawPhoto = data["profile_photo"];
+
+        // Jika server memberikan path tanpa domain → kita perbaiki
+        if (rawPhoto != null && rawPhoto.isNotEmpty) {
+          if (!rawPhoto.startsWith("http")) {
+            rawPhoto = "https://appabsensi.mobileprojp.com/public/$rawPhoto";
+          }
+        }
+
+        // Tambahkan key profile_photo_url ke map
+        data["profile_photo_url"] = rawPhoto;
+
+        profile = data;
+      } else {
         profile = null;
       }
     } catch (e) {
-      // ignore
+      profile = null;
     } finally {
       loading = false;
       notifyListeners();
@@ -104,19 +129,19 @@ class AbsenProvider with ChangeNotifier {
 
   // ---------- find today's attendance ----------
   void _findToday() {
-  final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-  try {
-    todayAttendance = history.firstWhere(
-      (h) => h.attendanceDate == todayStr,
-    );
-  } catch (e) {
-    todayAttendance = null;
+    final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    try {
+      todayAttendance = history.firstWhere((h) => h.attendanceDate == todayStr);
+    } catch (e) {
+      todayAttendance = null;
+    }
   }
-}
-
 
   // ---------- Check In ----------
-  Future<Map<String, dynamic>> checkIn({String status = 'masuk', String? alasanIzin}) async {
+  Future<Map<String, dynamic>> checkIn({
+    String status = 'masuk',
+    String? alasanIzin,
+  }) async {
     actionLoading = true;
     notifyListeners();
     try {
@@ -134,7 +159,8 @@ class AbsenProvider with ChangeNotifier {
         "check_in_lng": lng,
         "check_in_address": address,
         "status": status,
-        if (status == 'izin' && (alasanIzin ?? "").isNotEmpty) "alasan_izin": alasanIzin,
+        if (status == 'izin' && (alasanIzin ?? "").isNotEmpty)
+          "alasan_izin": alasanIzin,
       };
 
       final res = await ApiService.post('/absen/check-in', body);
@@ -225,55 +251,55 @@ class AbsenProvider with ChangeNotifier {
       return {"ok": false, "error": e.toString()};
     }
   }
-    // ---------- Update profile (data non-file) ----------
+
+  // ---------- Update profile (data non-file) ----------
   Future<bool> updateProfile(Map<String, dynamic> body) async {
+    print("=== UPDATE PROFILE ===");
+    print("SEND BODY: $body");
+
     actionLoading = true;
     notifyListeners();
-    try {
-      final res = await ApiService.post('/profile/update', body);
-      final parsed = jsonDecode(res.body);
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        // refresh local profile
-        await fetchProfile();
-        actionLoading = false;
-        notifyListeners();
-        return true;
-      } else {
-        // optional: you can inspect parsed['message']
-        actionLoading = false;
-        notifyListeners();
-        return false;
-      }
-    } catch (e) {
-      actionLoading = false;
+
+    final res = await ApiService.put("/profile", body);
+
+    print("STATUS: ${res.statusCode}");
+    print("RESPONSE: ${res.body}");
+
+    actionLoading = false;
+
+    if (res.statusCode == 200) {
+      await fetchProfile();
+      notifyListeners();
+      return true;
+    } else {
       notifyListeners();
       return false;
     }
   }
 
-  // ---------- Upload photo ----------
-  Future<bool> uploadPhoto(File file) async {
+  // ---------- Update Profile Photo (Base64) ----------
+  Future<bool> updatePhoto(String base64) async {
     actionLoading = true;
     notifyListeners();
+
     try {
-      final res = await ApiService.uploadFile('/profile/upload-photo', file, fieldName: 'photo');
-      // if server returns 200 and JSON body
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        // refresh profile to get new photo url
-        await fetchProfile();
-        actionLoading = false;
+      final res = await ApiService.put('/profile/photo', {
+        "profile_photo": base64,
+      });
+
+      final body = jsonDecode(res.body);
+
+      if (res.statusCode == 200) {
+        // simpan foto baru
+        profile!["profile_photo_url"] = body["data"]["profile_photo"];
+
         notifyListeners();
         return true;
-      } else {
-        actionLoading = false;
-        notifyListeners();
-        return false;
       }
-    } catch (e) {
-      actionLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
+    } catch (e) {}
 
+    actionLoading = false;
+    notifyListeners();
+    return false;
+  }
 }

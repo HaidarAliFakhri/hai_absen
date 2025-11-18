@@ -27,8 +27,13 @@ class ApiService {
     final headers = await _headers();
     return await http.get(url, headers: headers);
   }
-   // ------------------ ADD THIS ------------------
-  static Future<http.Response> uploadFile(String path, File file, {String fieldName = 'photo'}) async {
+
+  // ------------------ ADD THIS ------------------
+  static Future<http.Response> uploadFile(
+    String path,
+    File file, {
+    String fieldName = 'photo',
+  }) async {
     final url = Uri.parse("${Constants.baseUrl}$path");
     final token = await LocalStorage.getToken();
 
@@ -43,5 +48,11 @@ class ApiService {
 
     final streamed = await request.send();
     return await http.Response.fromStream(streamed);
+  }
+
+  static Future<http.Response> put(String path, Map data) async {
+    final url = Uri.parse("${Constants.baseUrl}$path");
+    final headers = await _headers();
+    return await http.put(url, headers: headers, body: jsonEncode(data));
   }
 }

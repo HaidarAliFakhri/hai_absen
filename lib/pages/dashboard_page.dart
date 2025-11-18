@@ -6,17 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:hai_absen/pages/detail_page.dart';
 import 'package:hai_absen/pages/profile_page.dart';
 import 'package:hai_absen/widgets/qr_scanner_page.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../providers/absen_provider.dart';
-import '../core/shared_prefs.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({Key? key}) : super(key: key);
+  const DashboardPage({super.key});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -30,8 +28,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   bool _darkMode = false;
 
-  final MobileScannerController _qrController =
-      MobileScannerController(facing: CameraFacing.back, torchEnabled: false);
+  final MobileScannerController _qrController = MobileScannerController(
+    facing: CameraFacing.back,
+    torchEnabled: false,
+  );
 
   @override
   void initState() {
@@ -88,18 +88,21 @@ class _DashboardPageState extends State<DashboardPage> {
           margin: const EdgeInsets.only(bottom: 40, left: 20, right: 20),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-              color: Colors.black87, borderRadius: BorderRadius.circular(12)),
-          child: Text(text,
-              style: const TextStyle(color: Colors.white),
-              textAlign: TextAlign.center),
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
         ),
       );
       Future.delayed(const Duration(seconds: 2), () {
         if (Navigator.canPop(context)) Navigator.pop(context);
       });
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(text)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
     }
   }
 
@@ -119,20 +122,19 @@ class _DashboardPageState extends State<DashboardPage> {
             title: const Text("Scan QR Absensi"),
             actions: [
               IconButton(
-  icon: const Icon(Icons.qr_code_scanner),
-  onPressed: () async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const QRScannerPage()),
-    );
+                icon: const Icon(Icons.qr_code_scanner),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QRScannerPage()),
+                  );
 
-    if (result != null) {
-      final res = await prov.checkIn(status: 'masuk');
-      _toast(res['body']?['message'] ?? "Absen via QR");
-    }
-  },
-)
-,
+                  if (result != null) {
+                    final res = await prov.checkIn(status: 'masuk');
+                    _toast(res['body']?['message'] ?? "Absen via QR");
+                  }
+                },
+              ),
             ],
           ),
           body: MobileScanner(
@@ -199,19 +201,29 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(width: 12),
             Expanded(
               child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(p['name'] ?? "-",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text("Batch: ${p['batch_ke'] ?? '-'}"),
-                    Text("${p['training_title'] ?? '-'}"),
-                  ]),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p['name'] ?? "-",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text("Batch: ${p['batch_ke'] ?? '-'}"),
+                  Text("${p['training_title'] ?? '-'}"),
+                ],
+              ),
             ),
-            Column(children: [
-              Text(DateFormat('EEEE, dd MMM yyyy').format(DateTime.now())),
-              Text(_timeStr, style: const TextStyle(fontWeight: FontWeight.bold))
-            ])
+            Column(
+              children: [
+                Text(DateFormat('EEEE, dd MMM yyyy').format(DateTime.now())),
+                Text(
+                  _timeStr,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -254,9 +266,14 @@ class _DashboardPageState extends State<DashboardPage> {
             Icon(icon, size: 40),
             const SizedBox(width: 12),
             Expanded(
-                child: Text(txt,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 17))),
+              child: Text(
+                txt,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 17,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -270,46 +287,49 @@ class _DashboardPageState extends State<DashboardPage> {
     final checkedIn = h?.checkInTime != null;
     final checkedOut = h?.checkOutTime != null;
 
-    return Row(children: [
-      Expanded(
-        child: ElevatedButton.icon(
-          onPressed: checkedIn
-              ? null
-              : () async {
-                  if (!isWithinWorkingHours()) {
-                    _toast("Diluar Jam Kerja");
-                    return;
-                  }
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: checkedIn
+                ? null
+                : () async {
+                    if (!isWithinWorkingHours()) {
+                      _toast("Diluar Jam Kerja");
+                      return;
+                    }
 
-                  final res = await prov.checkIn(status: 'masuk');
-                  _toast(res['body']?['message'] ?? "Absen masuk");
-                },
-          icon: const Icon(Icons.login),
-          label: const Text("Masuk"),
+                    final res = await prov.checkIn(status: 'masuk');
+                    _toast(res['body']?['message'] ?? "Absen masuk");
+                  },
+            icon: const Icon(Icons.login),
+            label: const Text("Masuk"),
+          ),
         ),
-      ),
-      const SizedBox(width: 8),
-      Expanded(
-        child: ElevatedButton.icon(
-          onPressed: !checkedIn || checkedOut
-              ? null
-              : () async {
-                  if (!isWithinWorkingHours()) {
-                    _toast("Belum saatnya pulang");
-                    return;
-                  }
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: !checkedIn || checkedOut
+                ? null
+                : () async {
+                    if (!isWithinWorkingHours()) {
+                      _toast("Belum saatnya pulang");
+                      return;
+                    }
 
-                  final res = await prov.checkOut();
-                  _toast(res['body']?['message'] ?? "Absen pulang");
-                },
-          icon: const Icon(Icons.logout),
-          label: const Text("Pulang"),
+                    final res = await prov.checkOut();
+                    _toast(res['body']?['message'] ?? "Absen pulang");
+                  },
+            icon: const Icon(Icons.logout),
+            label: const Text("Pulang"),
+          ),
         ),
-      ),
-      IconButton(
+        IconButton(
           onPressed: () => _openQr(prov),
-          icon: const Icon(Icons.qr_code_scanner))
-    ]);
+          icon: const Icon(Icons.qr_code_scanner),
+        ),
+      ],
+    );
   }
 
   // TIMELINE RIWAYAT
@@ -327,50 +347,51 @@ class _DashboardPageState extends State<DashboardPage> {
             : (h.checkOutTime != null ? Colors.blue : Colors.green);
 
         return Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Column(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        Container(width: 2, height: 60, color: Colors.grey.shade300),
-      ],
-    ),
-    const SizedBox(width: 10),
-    Expanded(
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DetailAbsenPage(data: h),
-            ),
-          );
-        },
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
               children: [
-                Text(h.attendanceDate,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold)),
-                Text("Masuk: ${h.checkInTime ?? '-'}"),
-                Text("Pulang: ${h.checkOutTime ?? '-'}"),
-                Text(h.checkInAddress ?? "-"),
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Container(width: 2, height: 60, color: Colors.grey.shade300),
               ],
             ),
-          ),
-        ),
-      ),
-    )
-  ],
-);
-
+            const SizedBox(width: 10),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DetailAbsenPage(data: h)),
+                  );
+                },
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          h.attendanceDate,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text("Masuk: ${h.checkInTime ?? '-'}"),
+                        Text("Pulang: ${h.checkOutTime ?? '-'}"),
+                        Text(h.checkInAddress ?? "-"),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
       }).toList(),
     );
   }
@@ -385,37 +406,24 @@ class _DashboardPageState extends State<DashboardPage> {
         appBar: AppBar(
           title: const Text("Hai Absen"),
           actions: [
-  IconButton(
-    icon: const Icon(Icons.settings),
-    tooltip: "Pengaturan Profil",
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ProfilePage()),
-      );
-    },
-  ),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: "Pengaturan Profil",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                );
+              },
+            ),
 
-  IconButton(
-    icon: Icon(_darkMode ? Icons.dark_mode : Icons.light_mode),
-    onPressed: () {
-      setState(() => _darkMode = !_darkMode);
-    },
-  ),
-
-  IconButton(
-    icon: const Icon(Icons.logout),
-    onPressed: () {
-      LocalStorage.saveToken('');
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/login',
-        (route) => false,
-      );
-    },
-  ),
-],
-
+            IconButton(
+              icon: Icon(_darkMode ? Icons.dark_mode : Icons.light_mode),
+              onPressed: () {
+                setState(() => _darkMode = !_darkMode);
+              },
+            ),
+          ],
         ),
         body: RefreshIndicator(
           onRefresh: () async {
@@ -434,10 +442,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 _buttons(prov),
                 const SizedBox(height: 20),
                 const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("Riwayat Absensi",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16))),
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Riwayat Absensi",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
                 const SizedBox(height: 10),
                 _timeline(prov),
               ],
