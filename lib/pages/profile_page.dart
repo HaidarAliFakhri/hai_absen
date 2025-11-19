@@ -126,19 +126,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 15),
 
-            DropdownButtonFormField<String>(
-              initialValue: _gender,
-              items: const [
-                DropdownMenuItem(value: "L", child: Text("Laki-laki")),
-                DropdownMenuItem(value: "P", child: Text("Perempuan")),
-              ],
-              onChanged: _editing ? (v) => setState(() => _gender = v) : null,
-              decoration: const InputDecoration(
-                labelText: "Jenis Kelamin",
-                border: OutlineInputBorder(),
-              ),
-            ),
-
             const SizedBox(height: 25),
 
             // ===== BUTTON ACTION =====
