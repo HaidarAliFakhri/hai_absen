@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hai_absen/pages/auth/main_navigation.dart';
 import 'package:hai_absen/pages/auth/register_page.dart';
-import 'package:hai_absen/pages/dashboard_page.dart';
 import 'package:hai_absen/pages/splash_page.dart';
 import 'package:hai_absen/providers/thame_provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -45,18 +44,18 @@ class MyApp extends StatelessWidget {
               useMaterial3: true,
             ),
 
+            // Mulai dari splash
             home: const SplashPage(),
 
             routes: {
-              // ROUTING ASLI TETAP ADA
-              '/dashboard': (_) => const DashboardPage(),
+              // NOTE: agar semua navigasi yang menuju "dashboard" menampilkan
+              // MainNavigation (dengan bottom nav) — sehingga bottom nav tidak hilang.
+              '/dashboard': (_) => const MainNavigation(),
+              '/main': (_) => const MainNavigation(),
 
-              // ROUTE REGISTER & LOGIN TETAP ADA
+              // ROUTE REGISTER & LOGIN
               '/register': (_) => const RegisterPage(),
               '/login': (_) => LoginPage(),
-
-              // >>> ROUTE BARU UNTUK NAVIGASI BOTTOM
-              '/main': (_) => const MainNavigation(),
             },
           );
         },

@@ -98,10 +98,8 @@ class _LoginPageState extends State<LoginPage> {
                                   );
 
                                   if (success) {
-                                    Navigator.pushReplacementNamed(
-                                      context,
-                                      '/dashboard',
-                                    );
+                                    Navigator.pushReplacementNamed(context, '/main');
+
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(

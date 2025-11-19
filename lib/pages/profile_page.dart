@@ -159,7 +159,7 @@ class _ProfilePageState extends State<ProfilePage> {
             // ===== INFO STATIC =====
             Card(
               child: ListTile(
-                leading: const Icon(Icons.info),
+                leading: const Icon(Icons.email_rounded),
                 title: const Text("Email"),
                 subtitle: Text(p["email"] ?? "-"),
               ),

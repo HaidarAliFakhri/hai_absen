@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:hai_absen/pages/dashboard_page.dart';
+
 
 import '../core/shared_prefs.dart';
 import 'auth/login_page.dart';
@@ -45,11 +45,11 @@ class _SplashPageState extends State<SplashPage>
 
     if (!mounted) return;
 
-    // Arahkan halaman
+    // Arahkan halaman:
+    // - Jika token ada -> masuk ke MainNavigation (route '/main')
+    // - Jika belum login -> ke LoginPage()
     if (token != null && token.isNotEmpty) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
-      );
+      Navigator.of(context).pushReplacementNamed('/main');
     } else {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => LoginPage()),
