@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
@@ -57,7 +58,6 @@ class _DetailAbsenPageState extends State<DetailAbsenPage> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-
     // Data posisi
     final LatLng? posIn = (d.checkInLat != null && d.checkInLng != null)
         ? LatLng(d.checkInLat!, d.checkInLng!)
@@ -68,24 +68,25 @@ class _DetailAbsenPageState extends State<DetailAbsenPage> {
         : null;
 
     // ======= MARKER =======
-   final Set<Marker> markers = {
-  if (posIn != null)
-    Marker(
-      markerId: const MarkerId("checkin"),
-      position: posIn,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: const InfoWindow(title: "Check-In"),
-    ),
+    final Set<Marker> markers = {
+      if (posIn != null)
+        Marker(
+          markerId: const MarkerId("checkin"),
+          position: posIn,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueGreen,
+          ),
+          infoWindow: const InfoWindow(title: "Check-In"),
+        ),
 
-  if (posOut != null)
-    Marker(
-      markerId: const MarkerId("checkout"),
-      position: posOut,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-      infoWindow: const InfoWindow(title: "Check-Out"),
-    ),
-};
-
+      if (posOut != null)
+        Marker(
+          markerId: const MarkerId("checkout"),
+          position: posOut,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: const InfoWindow(title: "Check-Out"),
+        ),
+    };
 
     // ======= POLYLINE (GARIS DARI IN → OUT) =======
     final polylines = <Polyline>{
@@ -190,6 +191,16 @@ class _DetailAbsenPageState extends State<DetailAbsenPage> {
             ),
 
             const SizedBox(height: 20),
+            const SizedBox(height: 20),
+
+            Text(
+              "Create by: Haidar Ali Fakhri",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           ],
         ),
       ),
@@ -212,10 +223,7 @@ class _DetailAbsenPageState extends State<DetailAbsenPage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            color.withOpacity(0.12),
-            color.withOpacity(0.06),
-          ],
+          colors: [color.withOpacity(0.12), color.withOpacity(0.06)],
         ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: color.withOpacity(0.4), width: 1.2),
@@ -224,7 +232,7 @@ class _DetailAbsenPageState extends State<DetailAbsenPage> {
             color: color.withOpacity(0.15),
             blurRadius: 12,
             offset: const Offset(0, 6),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -278,8 +286,10 @@ class _DetailAbsenPageState extends State<DetailAbsenPage> {
                 onPressed: () async {
                   final url =
                       "https://www.google.com/maps/search/?api=1&query=${pos.latitude},${pos.longitude}";
-                  await launchUrl(Uri.parse(url),
-                      mode: LaunchMode.externalApplication);
+                  await launchUrl(
+                    Uri.parse(url),
+                    mode: LaunchMode.externalApplication,
+                  );
                 },
               ),
             ),
@@ -293,16 +303,8 @@ class _DetailAbsenPageState extends State<DetailAbsenPage> {
       children: [
         Icon(icon, size: 20, color: Colors.blueGrey),
         const SizedBox(width: 8),
-        Text(
-          "$title: ",
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 15),
-          ),
-        ),
+        Text("$title: ", style: const TextStyle(fontWeight: FontWeight.w600)),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 15))),
       ],
     );
   }
@@ -314,13 +316,14 @@ class _DetailAbsenPageState extends State<DetailAbsenPage> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.85),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 8),
-        ],
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
       ),
       child: Text(
         text,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

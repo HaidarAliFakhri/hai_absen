@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hai_absen/pages/Riwayat_list_page.dart';
 import 'package:hai_absen/pages/dashboard_page.dart';
-import 'package:hai_absen/pages/detail_list_page.dart';
 import 'package:hai_absen/pages/profile_page.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -25,10 +25,7 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true, // agar floating navbar smooth
-      body: SafeArea(
-        top: false,
-        child: _pages[_currentIndex],
-      ),
+      body: SafeArea(top: false, child: _pages[_currentIndex]),
 
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),

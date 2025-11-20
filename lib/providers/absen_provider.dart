@@ -112,7 +112,22 @@ class AbsenProvider with ChangeNotifier {
 
         // Tambahkan key profile_photo_url ke map
         data["profile_photo_url"] = rawPhoto;
+        String? rawGender = data["jenis_kelamin"];
 
+        if (rawGender != null) {
+          rawGender = rawGender.trim().toUpperCase();
+
+          switch (rawGender) {
+            case "L":
+              data["jenis_kelamin"] = "Laki-laki";
+              break;
+            case "P":
+              data["jenis_kelamin"] = "Perempuan";
+              break;
+            default:
+              data["jenis_kelamin"] = null;
+          }
+        }
         profile = data;
       } else {
         profile = null;

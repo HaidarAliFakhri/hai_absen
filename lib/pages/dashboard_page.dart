@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -20,16 +21,15 @@ import '../providers/absen_provider.dart';
 
 class DashboardPage extends StatefulWidget {
   final bool removeAppBar;
-  
+
   const DashboardPage({super.key, this.removeAppBar = false});
-  
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
-  
 }
 
-class _DashboardPageState extends State<DashboardPage> with SingleTickerProviderStateMixin{
+class _DashboardPageState extends State<DashboardPage>
+    with SingleTickerProviderStateMixin {
   Timer? _clockTimer;
   Timer? _autoRefreshTimer;
   LatLng? _currentLatLng;
@@ -37,7 +37,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   bool _loadingLocation = true;
   late AnimationController glowCtrl;
   late Animation<double> glowAnim;
-
 
   String _timeStr = DateFormat('HH:mm:ss').format(DateTime.now());
   final bool _darkMode = false;
@@ -64,65 +63,64 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  // === ANIMASI GLOW WAKTU ===
-  glowCtrl = AnimationController(
-    duration: const Duration(seconds: 2),
-    vsync: this,
-  )..repeat(reverse: true);
+    // === ANIMASI GLOW WAKTU ===
+    glowCtrl = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
 
-  glowAnim = Tween<double>(begin: 0.4, end: 1.0).animate(
-    CurvedAnimation(parent: glowCtrl, curve: Curves.easeInOut),
-  );
+    glowAnim = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: glowCtrl, curve: Curves.easeInOut));
 
-  // === GET CURRENT LOCATION ===
-  _getCurrentLocation();
-
-  Timer.periodic(const Duration(seconds: 15), (_) {
+    // === GET CURRENT LOCATION ===
     _getCurrentLocation();
-  });
 
-  // === DEFAULT RANGE (LAST 30 DAYS) ===
-  final now = DateTime.now();
-  _range = DateTimeRange(
-    start: now.subtract(const Duration(days: 30)),
-    end: now,
-  );
+    Timer.periodic(const Duration(seconds: 15), (_) {
+      _getCurrentLocation();
+    });
 
-  // === FETCH DATA SETELAH BUILD ===
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final prov = Provider.of<AbsenProvider>(context, listen: false);
-
-    // Initial fetch
-    prov.fetchStats(
-      start: "2025-07-31",
-      end: "2025-12-31",
+    // === DEFAULT RANGE (LAST 30 DAYS) ===
+    final now = DateTime.now();
+    _range = DateTimeRange(
+      start: now.subtract(const Duration(days: 30)),
+      end: now,
     );
 
-    prov.fetchProfile();
-    prov.fetchHistory();
+    // === FETCH DATA SETELAH BUILD ===
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final prov = Provider.of<AbsenProvider>(context, listen: false);
 
-    // CLOCK TIMER
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        setState(() {
-          _timeStr = DateFormat('HH:mm:ss').format(DateTime.now());
-        });
-      }
+      // Initial fetch
+      prov.fetchStats(start: "2025-07-31", end: "2025-12-31");
+
+      prov.fetchProfile();
+      prov.fetchHistory();
+
+      // CLOCK TIMER
+      _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) {
+          setState(() {
+            _timeStr = DateFormat('HH:mm:ss').format(DateTime.now());
+          });
+        }
+      });
+
+      // AUTO REFRESH PROFILE & HISTORY
+      _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (
+        _,
+      ) async {
+        if (mounted) {
+          prov.fetchProfile();
+          prov.fetchHistory();
+        }
+      });
     });
-
-    // AUTO REFRESH PROFILE & HISTORY
-    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
-      if (mounted) {
-        prov.fetchProfile();
-        prov.fetchHistory();
-      }
-    });
-  });
-}
-
+  }
 
   @override
   void dispose() {
@@ -131,8 +129,6 @@ void initState() {
     _qrController.dispose();
     glowCtrl.dispose();
     super.dispose();
-    
-
   }
 
   bool isWithinWorkingHours() {
@@ -250,234 +246,233 @@ void initState() {
   }
 
   Widget _locationCard() {
-  return Card(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Lokasi Anda Sekarang",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Lokasi Anda Sekarang",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
 
-          // ======== ALAMAT / KOORDINAT ========
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _loadingLocation
-                ? const Text(
-                    "Mengambil lokasi...",
-                    key: ValueKey("loading"),
-                    style: TextStyle(color: Colors.grey),
-                  )
-                : Text(
-                    _currentAddress ??
-                        "(${_currentLatLng!.latitude}, ${_currentLatLng!.longitude})",
-                    key: const ValueKey("address"),
-                    style: TextStyle(color: Colors.grey),
+            // ======== ALAMAT / KOORDINAT ========
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _loadingLocation
+                  ? const Text(
+                      "Mengambil lokasi...",
+                      key: ValueKey("loading"),
+                      style: TextStyle(color: Colors.grey),
+                    )
+                  : Text(
+                      _currentAddress ??
+                          "(${_currentLatLng!.latitude}, ${_currentLatLng!.longitude})",
+                      key: const ValueKey("address"),
+                      style: TextStyle(color: Colors.grey),
+                    ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ======== GOOGLE MAPS (ANTI FLICKER) ========
+            SizedBox(
+              height: 200,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: GoogleMap(
+                  mapType: MapType.normal,
+                  initialCameraPosition: CameraPosition(
+                    target: _currentLatLng ?? const LatLng(-6.2, 106.8),
+                    zoom: 16,
                   ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ======== GOOGLE MAPS (ANTI FLICKER) ========
-          SizedBox(
-            height: 200,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: GoogleMap(
-                mapType: MapType.normal,
-                initialCameraPosition: CameraPosition(
-                  target: _currentLatLng ?? const LatLng(-6.2, 106.8),
-                  zoom: 16,
+                  markers: _currentLatLng == null
+                      ? {}
+                      : {
+                          Marker(
+                            markerId: const MarkerId("me"),
+                            position: _currentLatLng!,
+                          ),
+                        },
+                  onMapCreated: (c) {
+                    // hanya set sekali
+                  },
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
                 ),
-                markers: _currentLatLng == null
-                    ? {}
-                    : {
-                        Marker(
-                          markerId: const MarkerId("me"),
-                          position: _currentLatLng!,
-                        )
-                      },
-                onMapCreated: (c) {
-                   // hanya set sekali
-                },
-                myLocationEnabled: true,
-                myLocationButtonEnabled: false,
-                zoomControlsEnabled: false,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _profileCard(AbsenProvider prov) {
     final p = prov.profile;
     if (p == null) return _shimmerCard();
 
     return ClipRRect(
-  borderRadius: BorderRadius.circular(22),
-  child: BackdropFilter(
-    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-    child: Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withOpacity(0.4),
-              Colors.white.withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
           ),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.25),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            // ============= HERO AVATAR =============
-            Hero(
-              tag: "profileAvatar",
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => ProfilePage()),
-                  );
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutBack,
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.blue.shade400,
-                        Colors.purple.shade400,
-                      ],
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 35,
-                    backgroundImage: p['profile_photo_url'] != null
-                        ? NetworkImage(p['profile_photo_url'])
-                        : null,
-                    child: p['profile_photo_url'] == null
-                        ? Shimmer.fromColors(
-                            baseColor: Colors.grey.shade400,
-                            highlightColor: Colors.grey.shade200,
-                            child: const Icon(Icons.person, size: 38),
-                          )
-                        : null,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 16),
-
-            // ============= INFO USER =============
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    p['name'] ?? "-",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Batch ${p['batch_ke'] ?? '-'} • ${p['training_title'] ?? '-'}",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).textTheme.bodySmall!.color,
-                    ),
-                  ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.4),
+                  Colors.white.withOpacity(0.05),
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ),
-
-            const SizedBox(width: 10),
-
-            // ============= GLOWING TIME =============
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.blue.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Text(
-                    "NOW",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade700,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-
-                AnimatedBuilder(
-                  animation: glowAnim,
-                  builder: (context, child) {
-                    return Opacity(
-                      opacity: glowAnim.value,
-                      child: Text(
-                        _timeStr,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                              color: Colors.blue.withOpacity(0.4),
-                              blurRadius: 12,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+              border: Border.all(
+                color: Colors.white.withOpacity(0.25),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
-          ],
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                // ============= HERO AVATAR =============
+                Hero(
+                  tag: "profileAvatar",
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => ProfilePage()),
+                      );
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOutBack,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.blue.shade400,
+                            Colors.purple.shade400,
+                          ],
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 35,
+                        backgroundImage: p['profile_photo_url'] != null
+                            ? NetworkImage(p['profile_photo_url'])
+                            : null,
+                        child: p['profile_photo_url'] == null
+                            ? Shimmer.fromColors(
+                                baseColor: Colors.grey.shade400,
+                                highlightColor: Colors.grey.shade200,
+                                child: const Icon(Icons.person, size: 38),
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                // ============= INFO USER =============
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p['name'] ?? "-",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Batch ${p['batch_ke'] ?? '-'} • ${p['training_title'] ?? '-'}",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).textTheme.bodySmall!.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // ============= GLOWING TIME =============
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        "NOW",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    AnimatedBuilder(
+                      animation: glowAnim,
+                      builder: (context, child) {
+                        return Opacity(
+                          opacity: glowAnim.value,
+                          child: Text(
+                            _timeStr,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.blue.withOpacity(0.4),
+                                  blurRadius: 12,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-    ),
-  ),
-);
-
-
+    );
   }
 
   Widget _statusCard(AbsenProvider prov) {
@@ -741,6 +736,7 @@ void initState() {
     _countsPerDay = counts;
     _statusCounts = statusCounts;
   }
+
   // Build pie sections
   List<PieChartSectionData> _buildPieSections(double radius) {
     final masuk = _statusCounts['masuk'] ?? 0;
@@ -878,31 +874,29 @@ void initState() {
   @override
   Widget build(BuildContext context) {
     final prov = Provider.of<AbsenProvider>(context);
-    
 
     // prepare chart data from provider history (history API)
     _prepareChartData(prov.history);
 
-    
-
     return Theme(
       data: _darkMode ? ThemeData.dark() : ThemeData.light(),
       child: Scaffold(
-        appBar: widget.removeAppBar ? null : 
-        AppBar(
-          title: const Text("Hai Absen"),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.person),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfilePage()),
-                );
-              },
-            ),
-          ],
-        ),
+        appBar: widget.removeAppBar
+            ? null
+            : AppBar(
+                title: const Text("Hai Absen"),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.person),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ProfilePage()),
+                      );
+                    },
+                  ),
+                ],
+              ),
         body: RefreshIndicator(
           onRefresh: () async {
             await prov.fetchProfile();
@@ -1093,7 +1087,6 @@ void initState() {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            
                           ] else ...[
                             // wide: row with pie (left) and bar (right)
                             Row(
@@ -1150,11 +1143,10 @@ void initState() {
                                     ],
                                   ),
                                 ),
-                                
                               ],
                             ),
                           ],
-                          
+
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
@@ -1193,6 +1185,16 @@ void initState() {
 
                 const SizedBox(height: 10),
                 _timeline(prov),
+                const SizedBox(height: 20),
+
+                Text(
+                  "Create by: Haidar Ali Fakhri",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ],
             ),
           ),
